@@ -11,6 +11,9 @@
     <modules>
         <module>hadoop1</module>
         <module>hadoop2</module>
+        <module>zookeeper</module>
+        <module>sparkAppDependecy</module>
+        <module>ScalaApplication</module>
     </modules>
     <url>http://maven.apache.org</url>
 </project>
