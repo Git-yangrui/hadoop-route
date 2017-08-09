@@ -2,7 +2,6 @@ package com.yangrui.hadooproute;
 
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.hadoop.io.Text;
-import sun.applet.Main;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

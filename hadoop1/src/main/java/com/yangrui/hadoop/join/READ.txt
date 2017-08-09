@@ -1,0 +1,21 @@
+a.txt
+id  name
+001 iphone6
+002 xiaomi
+003 mate7
+004 nubia
+005 meilan
+
+
+b.txt
+id orderid
+001 00101
+001 00110
+002 01001
+
+
+
+SELECT name,orderid from a,b where a.id=b.id;
+iphone6 00101
+iphone6 00110
+xiaomi 01001
