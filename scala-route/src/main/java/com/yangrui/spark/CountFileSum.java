@@ -26,6 +26,7 @@ public class CountFileSum {
                 return v1.length();
             }
         });
+
         Integer reduce = integerJavaRDD.reduce(new Function2<Integer, Integer, Integer>() {
             @Override
             public Integer call(Integer v1, Integer v2) throws Exception {
