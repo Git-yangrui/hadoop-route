@@ -33,6 +33,8 @@ public class WordCountLocal {
                 return v1 + v2;
             }
         });
+
+
         stringIntegerJavaPairRDD1.foreach(new VoidFunction<Tuple2<String, Integer>>() {
             @Override
             public void call(Tuple2<String, Integer> stringIntegerTuple2) throws Exception {
