@@ -8,6 +8,7 @@ import org.apache.spark.api.java.function.*;
 import scala.Tuple2;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class WordCountLocal {
@@ -17,8 +18,8 @@ public class WordCountLocal {
         JavaRDD<String> stringJavaRDD = javaSparkContext.textFile("C:\\Users\\admin\\Desktop\\112.txt");
         JavaRDD<String> stringJavaRDD1 = stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
             @Override
-            public Iterable<String> call(String s) throws Exception {
-                return Arrays.asList(s.split(" "));
+            public Iterator<String> call(String s) throws Exception {
+                return Arrays.asList(s.split(" ")).iterator();
             }
         });
         JavaPairRDD<String, Integer> stringIntegerJavaPairRDD = stringJavaRDD1.mapToPair(new PairFunction<String, String, Integer>() {

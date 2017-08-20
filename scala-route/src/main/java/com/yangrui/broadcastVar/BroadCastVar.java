@@ -1,17 +1,17 @@
 package com.yangrui.broadcastVar;
 
-import akka.routing.Broadcast;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
-import scala.actors.threadpool.Arrays;
 
 import java.util.List;
 //创建共享变量
 public class BroadCastVar {
     public static void main(String[] args) {
+
+
         SparkConf conf = new SparkConf().setAppName("broadcatVariable")
                 .setMaster("local");
         JavaSparkContext context = new JavaSparkContext(conf);

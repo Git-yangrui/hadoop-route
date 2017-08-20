@@ -7,22 +7,27 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.api.java.function.VoidFunction;
 import scala.Tuple2;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 public class WordCountCluster {
     public static void main(String[] args) {
         SparkConf sparkConf = new SparkConf().setAppName("WorldCountCluster");
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
         JavaRDD<String> stringJavaRDD = javaSparkContext.textFile("hdfs://yangziyu01:9000/user/spark/112.txt");
-        JavaRDD<String> stringJavaRDD1 = stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
+
+
+        JavaRDD<String> stringJavaRDD1= stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
+
             @Override
-            public Iterable<String> call(String s) throws Exception {
-                return Arrays.asList(s.split("\t"));
+            public Iterator<String> call(String s) throws Exception {
+                return Arrays.asList(s.split("\t")).iterator();
             }
         });
+
+
         JavaPairRDD<String, Integer> stringIntegerJavaPairRDD = stringJavaRDD1.mapToPair(new PairFunction<String, String, Integer>() {
             @Override
             public Tuple2<String, Integer> call(String s) throws Exception {

@@ -11,6 +11,7 @@ import scala.Tuple2;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Iterator;
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //need  implement serializable
@@ -21,8 +22,8 @@ public class WorldCountSort extends MySparkContext implements  Serializable{
         JavaRDD<String> stringJavaRDD = context.textFile("C:\\Users\\admin\\Desktop\\112.txt");
         JavaRDD<String> linesRDD = stringJavaRDD.flatMap(new FlatMapFunction<String, String>() {
             @Override
-            public Iterable<String> call(String s) throws Exception {
-                return Arrays.asList(s.split(" "));
+            public Iterator<String> call(String s) throws Exception {
+                return Arrays.asList(s.split(" ")).iterator();
             }
         });
         JavaPairRDD<String, Integer> pariRDD = linesRDD.mapToPair(new PairFunction<String, String, Integer>() {
