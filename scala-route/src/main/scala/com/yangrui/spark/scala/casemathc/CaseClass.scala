@@ -13,15 +13,17 @@ object CaseClass extends App {
 
   def judgeIdetify(p: Person): Unit = {
     p match {
-      case Teacher(name, subject) => "this is teacher"
+      case Teacher(name111, subject1122) =>  println("this is teacher "+name111+"  "+subject1122)
       case Student(name, classroom) => println("this is student")
       case _ => println("unknown")
     }
   }
 
-  judgeIdetify(Student("sds", "sdsds"))
+//  judgeIdetify(Student("sds", "sdsds"))
 
-  val teacher = Teacher("yangrui", "sdsd")
-  println(teacher.name)
-  println(teacher.name)
+//  val teacher = Teacher("yangrui", "sdsd")
+//  println(teacher.name)
+//  println(teacher.name)
+
+  judgeIdetify(Teacher("yangrui","123132131"))
 }
