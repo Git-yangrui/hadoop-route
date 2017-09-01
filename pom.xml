@@ -13,6 +13,7 @@
         <module>hadoop2</module>
         <module>zookeeper</module>
         <module>scala-route</module>
+        <module>sparkproject</module>
     </modules>
     <url>http://maven.apache.org</url>
 </project>
