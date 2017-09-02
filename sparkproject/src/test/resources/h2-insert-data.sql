@@ -1,0 +1,1 @@
+INSERT INTO `task` (`task_id`, `task_name`, `create_time`, `start_time`, `finish_time`, `task_type`, `task_status`, `task_param`) VALUES ('1', 'test1', '20170902', '20170902', '20170902', 'test', 'finished', '123');
