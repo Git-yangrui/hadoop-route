@@ -1,4 +1,4 @@
-package com.ibeifeng.sparkproject;
+package com.ibeifeng.sparkproject.util;
 
 /**
  * 单例模式Demo

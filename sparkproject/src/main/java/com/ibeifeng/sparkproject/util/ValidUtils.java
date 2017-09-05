@@ -1,4 +1,4 @@
-package com.ibeifeng.sparkproject;
+package com.ibeifeng.sparkproject.util;
 
 /**
  * 校验工具类

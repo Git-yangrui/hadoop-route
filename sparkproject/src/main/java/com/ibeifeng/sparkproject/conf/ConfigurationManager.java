@@ -84,5 +84,14 @@ public class ConfigurationManager {
 	public static Integer getInteger(String key) {
 		return Integer.valueOf(prop.getProperty(key));
 	}
+	public static Boolean getBoolean(String key) {
+		String property = getProperty(key);
+		try{
+			return Boolean.valueOf(property);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		return false;
+	}
 
 }

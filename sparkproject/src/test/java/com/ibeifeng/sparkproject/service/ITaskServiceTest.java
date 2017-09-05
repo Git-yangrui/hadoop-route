@@ -1,4 +1,4 @@
-package com.ibeifeng.sparkproject.mapper;
+package com.ibeifeng.sparkproject.service;
 
 import com.ibeifeng.sparkproject.domain.Task;
 import org.junit.Test;
@@ -9,25 +9,19 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:application-core.xml"})
-public class ITaskMapperTest {
+public class ITaskServiceTest {
 
     @Autowired
-    private ITaskMapper iTaskMapper;
-
+    private TaskService taskService;
     @Test
-    public void test_ItaskMapper_findById(){
-        Task task = iTaskMapper.findById(1);
-    }
-    @Test
-    public void test_ItaskMapper_insert(){
-        Task task = iTaskMapper.findById(1);
+    public void test_transaction(){
+        Task task = taskService.findById(1);
         Task task1 = new Task();
         task1.setTaskName(task.getTaskName());
         task1.setTaskParam(task.getTaskParam());
         task1.setTaskStatus(task.getTaskStatus());
         task1.setTaskType(task.getTaskType());
         task1.setFinishTime(task.getFinishTime());
-        iTaskMapper.insertTask(task1);
+        taskService.insert(task1);
     }
-
 }

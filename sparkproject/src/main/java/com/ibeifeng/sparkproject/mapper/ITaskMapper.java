@@ -1,10 +1,7 @@
 package com.ibeifeng.sparkproject.mapper;
 
 import com.ibeifeng.sparkproject.domain.Task;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 public interface ITaskMapper {
 
@@ -21,4 +18,8 @@ public interface ITaskMapper {
 
     })
     Task findById(@Param("taskId")long taskId);
+
+    @Insert("insert into task values(null,#{taskName},#{createTime},#{startTime},#{finishTime},#{taskType},#{taskStatus},#{taskParam})")
+    @Options(useGeneratedKeys = true, keyProperty = "task_id")
+    int insertTask(Task task);
 }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xsi:schemaLocation="
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+
+  http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd
+   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+ http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+    <!--<jdbc:embedded-database id="dataSource" type="H2">-->
+        <!--<jdbc:script location="classpath:h2-schema.sql" />-->
+        <!--<jdbc:script location="classpath:h2-insert-data.sql" />-->
+    <!--</jdbc:embedded-database>-->
+    <context:component-scan base-package="com.ibeifeng.sparkproject.service" />
+    <context:property-placeholder location="classpath:my.properties"/>
+    <!--dirverClass.dirver = com.mysql.jdbc.Driver-->
+    <!--username.name = root-->
+    <!--password.pwd = yangyang-->
+    <!--dburl.url = jdbc:mysql://192.168.1.100:3306/spark-project?createDatabaseIfNotExist=true-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <!-- access -->
+        <property name="driverClass" value="${dirverClass.dirver}" />
+        <property name="jdbcUrl" value="${dburl.url}" />
+        <property name="user" value="${username.name}" />
+        <property name="password" value="${password.pwd}" />
+        <!-- pool sizing -->
+        <property name="initialPoolSize" value="3" />
+        <property name="minPoolSize" value="6" />
+        <property name="maxPoolSize" value="25" />
+        <property name="acquireIncrement" value="3" />
+        <property name="maxStatements" value="0" />
+        <!-- retries -->
+        <property name="acquireRetryAttempts" value="30" />
+        <property name="acquireRetryDelay" value="1000" /> <!-- 1s -->
+        <property name="breakAfterAcquireFailure" value="false" />
+        <!-- refreshing connections -->
+        <property name="maxIdleTime" value="180" /> <!-- 3min -->
+        <property name="maxConnectionAge" value="10" /> <!-- 1h -->
+        <!-- timeouts and testing -->
+        <property name="checkoutTimeout" value="5000" /> <!-- 5s -->
+        <property name="idleConnectionTestPeriod" value="60" /> <!-- 60 -->
+        <property name="testConnectionOnCheckout" value="true" />
+        <property name="preferredTestQuery" value="SELECT 1" />
+        <property name="testConnectionOnCheckin" value="true" />
+    </bean>
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <!-- enable transaction annotation support -->
+    <tx:annotation-driven transaction-manager="txManager" />
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.ibeifeng.sparkproject.mapper" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+</beans>
