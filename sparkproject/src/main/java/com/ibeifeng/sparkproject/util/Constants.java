@@ -20,7 +20,7 @@ public interface Constants {
     String USERVISI_TSESSIONANALYZER_SPARK = "UserVisitSessionAnalyzerSpark";
     String SPARKSTREMINGAPPLICATION = "SparkStremingApplication";
     String FIELD_SESSIONID = "sessionid";
-
+    String FIELD_STARTTIME="startTime";
     String FIELD_VISIT_LENGTH="visitLength";
     String FIELD_STEP_LENGTH="stepLength";
 

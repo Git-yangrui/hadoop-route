@@ -22,7 +22,7 @@ public class ValidUtils {
 				parameter, "\\|", startParamField);
 		String endParamFieldStr = StringUtils.getFieldFromConcatString(
 				parameter, "\\|", endParamField); 
-		if(startParamFieldStr == null || endParamFieldStr == null) {
+		if(!org.apache.commons.lang3.StringUtils.isNotEmpty(startParamFieldStr)|| !org.apache.commons.lang3.StringUtils.isNotEmpty(endParamFieldStr)) {
 			return true;
 		}
 		
@@ -56,7 +56,7 @@ public class ValidUtils {
 			String parameter, String paramField) {
 		String paramFieldValue = StringUtils.getFieldFromConcatString(
 				parameter, "\\|", paramField);
-		if(paramFieldValue == null) {
+		if(!org.apache.commons.lang3.StringUtils.isNotEmpty(paramFieldValue)) {
 			return true;
 		}
 		String[] paramFieldValueSplited = paramFieldValue.split(",");  
@@ -90,7 +90,7 @@ public class ValidUtils {
 			String parameter, String paramField) {  
 		String paramFieldValue = StringUtils.getFieldFromConcatString(
 				parameter, "\\|", paramField);
-		if(paramFieldValue == null) {
+		if(!org.apache.commons.lang3.StringUtils.isNotEmpty(paramFieldValue)) {
 			return true;
 		}
 		

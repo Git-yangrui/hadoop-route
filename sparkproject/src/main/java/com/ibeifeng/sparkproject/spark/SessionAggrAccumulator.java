@@ -30,7 +30,7 @@ public class SessionAggrAccumulator extends AccumulatorV2<String, String> {
 
     @Override
     public boolean isZero() {
-        return initValue==null?true:false;
+        return true;
     }
 
     @Override

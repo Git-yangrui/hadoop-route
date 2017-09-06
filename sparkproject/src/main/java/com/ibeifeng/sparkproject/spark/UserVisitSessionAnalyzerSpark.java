@@ -3,33 +3,34 @@ package com.ibeifeng.sparkproject.spark;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ibeifeng.sparkproject.conf.ConfigurationManager;
+import com.ibeifeng.sparkproject.domain.SessionAggrStat;
+import com.ibeifeng.sparkproject.domain.SessionRandomExtract;
 import com.ibeifeng.sparkproject.domain.Task;
 import com.ibeifeng.sparkproject.mockdata.MockData;
+import com.ibeifeng.sparkproject.service.ISessionAggrStatService;
+import com.ibeifeng.sparkproject.service.ISessionRandomExtractSevice;
 import com.ibeifeng.sparkproject.service.TaskService;
 import com.ibeifeng.sparkproject.util.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.Accumulator;
-import org.apache.spark.AccumulatorParam;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.hive.HiveContext;
-import org.apache.spark.util.AccumulatorV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import scala.Tuple2;
 
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
 
 
 public class UserVisitSessionAnalyzerSpark {
@@ -55,11 +56,270 @@ public class UserVisitSessionAnalyzerSpark {
         //到这里为止数据的格式是 《sessionid,(session,searchkeywords,clickcategoryids,age,professional ...............)》
         JavaPairRDD<String, String> sessionAggrInfoRDD = aggregateBySession(sqlContext, actionRDDByDateRange);
 
-
         SessionAggrAccumulator sessionAggrAccumulator = new SessionAggrAccumulator();
         sc.sc().register(sessionAggrAccumulator);
         JavaPairRDD<String, String> filterRDD = filterSessionAndAggrStat(sessionAggrInfoRDD, taskParam, sessionAggrAccumulator);
+        randomExtractSession(filterRDD,taskId);
+        LOG.info("***********************************************************************" + filterRDD.count());
+        // 计算出各个范围的session占比，并写入MySQL
+        calculateAndPersistAggrStat(sessionAggrAccumulator.value(), task.getTaskId());
+
         sc.close();
+    }
+
+    private static void randomExtractSession(JavaPairRDD<String, String> filterRDD,final long taskid) {
+
+        // 第一步，计算出每天每小时的session数量，获取<yyyy-MM-dd_HH,aggrInfo>格式的RDD
+        JavaPairRDD<String, String> time2sessionidRDD = filterRDD.mapToPair(
+
+                new PairFunction<Tuple2<String,String>, String, String>() {
+
+                    private static final long serialVersionUID = 1L;
+
+                    @Override
+                    public Tuple2<String, String> call(
+                            Tuple2<String, String> tuple) throws Exception {
+                        String aggrInfo = tuple._2;
+
+                        String startTime = com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                                aggrInfo, "\\|", Constants.FIELD_STARTTIME);
+                        String dateHour = DateUtils.getDateHour(startTime);
+
+                        return new Tuple2<String, String>(dateHour, aggrInfo);
+                    }
+
+                });
+
+        /**
+         * 思考一下：这里我们不要着急写大量的代码，做项目的时候，一定要用脑子多思考
+         *
+         * 每天每小时的session数量，然后计算出每天每小时的session抽取索引，遍历每天每小时session
+         * 首先抽取出的session的聚合数据，写入session_random_extract表
+         * 所以第一个RDD的value，应该是session聚合数据
+         *
+         */
+
+        // 得到每天每小时的session数量
+        Map<String, Long> countMap = time2sessionidRDD.countByKey();
+
+        // 第二步，使用按时间比例随机抽取算法，计算出每天每小时要抽取session的索引
+
+        // 将<yyyy-MM-dd_HH,count>格式的map，转换成<yyyy-MM-dd,<HH,count>>的格式
+        Map<String, Map<String, Long>> dateHourCountMap =
+                new HashMap<String, Map<String, Long>>();
+
+        for(Map.Entry<String, Long> countEntry : countMap.entrySet()) {
+            String dateHour = countEntry.getKey();
+            String date = dateHour.split("_")[0];
+            String hour = dateHour.split("_")[1];
+
+            long count = Long.valueOf(String.valueOf(countEntry.getValue()));
+
+            Map<String, Long> hourCountMap = dateHourCountMap.get(date);
+            if(hourCountMap == null) {
+                hourCountMap = new HashMap<String, Long>();
+                dateHourCountMap.put(date, hourCountMap);
+            }
+
+            hourCountMap.put(hour, count);
+        }
+
+        // 开始实现我们的按时间比例随机抽取算法
+
+        // 总共要抽取100个session，先按照天数，进行平分
+        int extractNumberPerDay = 100 / dateHourCountMap.size();
+
+        // <date,<hour,(3,5,20,102)>>
+       final Map<String, Map<String, List<Integer>>> dateHourExtractMap =
+                new HashMap<String, Map<String, List<Integer>>>();
+
+        Random random = new Random();
+
+        for(Map.Entry<String, Map<String, Long>> dateHourCountEntry : dateHourCountMap.entrySet()) {
+            String date = dateHourCountEntry.getKey();
+            Map<String, Long> hourCountMap = dateHourCountEntry.getValue();
+
+            // 计算出这一天的session总数
+            long sessionCount = 0L;
+            for(long hourCount : hourCountMap.values()) {
+                sessionCount += hourCount;
+            }
+
+            Map<String, List<Integer>> hourExtractMap = dateHourExtractMap.get(date);
+            if(hourExtractMap == null) {
+                hourExtractMap = new HashMap<String, List<Integer>>();
+                dateHourExtractMap.put(date, hourExtractMap);
+            }
+
+            // 遍历每个小时
+            for(Map.Entry<String, Long> hourCountEntry : hourCountMap.entrySet()) {
+                String hour = hourCountEntry.getKey();
+                long count = hourCountEntry.getValue();
+
+                // 计算每个小时的session数量，占据当天总session数量的比例，直接乘以每天要抽取的数量
+                // 就可以计算出，当前小时需要抽取的session数量
+                int hourExtractNumber = (int)(((double)count / (double)sessionCount)
+                        * extractNumberPerDay);
+                if(hourExtractNumber > count) {
+                    hourExtractNumber = (int) count;
+                }
+
+                // 先获取当前小时的存放随机数的list
+                List<Integer> extractIndexList = hourExtractMap.get(hour);
+                if(extractIndexList == null) {
+                    extractIndexList = new ArrayList<Integer>();
+                    hourExtractMap.put(hour, extractIndexList);
+                }
+
+                // 生成上面计算出来的数量的随机数
+                for(int i = 0; i < hourExtractNumber; i++) {
+                    int extractIndex = random.nextInt((int) count);
+                    while(extractIndexList.contains(extractIndex)) {
+                        extractIndex = random.nextInt((int) count);
+                    }
+                    extractIndexList.add(extractIndex);
+                }
+            }
+        }
+        //  dateHour   aggrInfo,aggrInfo,aggrInfo
+        JavaPairRDD<String, Iterable<String>> timeSessionSRDD = time2sessionidRDD.groupByKey();
+        JavaRDD<Tuple2<String, String>> tuple2JavaRDD = timeSessionSRDD.flatMap(new FlatMapFunction<Tuple2<String, Iterable<String>>, Tuple2<String, String>>() {
+            @Override
+            public Iterator<Tuple2<String, String>> call(Tuple2<String, Iterable<String>> stringIterableTuple2) throws Exception {
+                List<Tuple2<String, String>> extractSessionids = new ArrayList<>();
+                String dateHour = stringIterableTuple2._1;
+                String date = dateHour.split("_")[0];
+                String hour = dateHour.split("_")[1];
+                Iterable<String> iterable = stringIterableTuple2._2;
+
+                Iterator<String> iterator = iterable.iterator();
+                int index = 0;
+                List<Integer> hourCOunlist = dateHourExtractMap.get(date).get(hour);
+                ISessionRandomExtractSevice bean = (ISessionRandomExtractSevice) context.getBean("iSessionRandomExtractSevice");
+
+                while (iterator.hasNext()) {
+                    String sessionAggrInfo = iterator.next();
+                    if (hourCOunlist.contains(index)) {
+                        String sessionid = com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                                sessionAggrInfo, "\\|", Constants.FIELD_SESSIONID);
+
+                        // 将数据写入MySQL
+                        SessionRandomExtract sessionRandomExtract = new SessionRandomExtract();
+                        sessionRandomExtract.setTaskid(taskid);
+                        sessionRandomExtract.setSessionid(sessionid);
+                        sessionRandomExtract.setStartTime(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                                sessionAggrInfo, "\\|", Constants.FIELD_STARTTIME));
+                        sessionRandomExtract.setSearchKeywords(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                                sessionAggrInfo, "\\|", Constants.FIELD_SEARCH_KEYWORDS));
+                        sessionRandomExtract.setClickCategoryIds(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                                sessionAggrInfo, "\\|", Constants.FIELD_CATEGORY_IDS));
+
+                        bean.insert(sessionRandomExtract);
+                        extractSessionids.add(new Tuple2<String, String>(sessionid, sessionid));
+                    }
+
+                    index++;
+                }
+
+                return extractSessionids.iterator();
+            }
+        });
+    }
+
+    private static void calculateAndPersistAggrStat(String value, long taskId) {
+// 从Accumulator统计串中获取值
+        // 从Accumulator统计串中获取值
+        long session_count = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.SESSION_COUNT));
+
+        long visit_length_1s_3s = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_1s_3s));
+        long visit_length_4s_6s = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_4s_6s));
+        long visit_length_7s_9s = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_7s_9s));
+        long visit_length_10s_30s = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_10s_30s));
+        long visit_length_30s_60s = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_30s_60s));
+        long visit_length_1m_3m = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_1m_3m));
+        long visit_length_3m_10m = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_3m_10m));
+        long visit_length_10m_30m = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_10m_30m));
+        long visit_length_30m = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.TIME_PERIOD_30m));
+
+        long step_length_1_3 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_1_3));
+        long step_length_4_6 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_4_6));
+        long step_length_7_9 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_7_9));
+        long step_length_10_30 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_10_30));
+        long step_length_30_60 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_30_60));
+        long step_length_60 = Long.valueOf(com.ibeifeng.sparkproject.util.StringUtils.getFieldFromConcatString(
+                value, "\\|", Constants.STEP_PERIOD_60));
+
+        // 计算各个访问时长和访问步长的范围
+        double visit_length_1s_3s_ratio = NumberUtils.formatDouble(
+                (double) visit_length_1s_3s / (double) session_count, 2);
+        double visit_length_4s_6s_ratio = NumberUtils.formatDouble(
+                (double) visit_length_4s_6s / (double) session_count, 2);
+        double visit_length_7s_9s_ratio = NumberUtils.formatDouble(
+                (double) visit_length_7s_9s / (double) session_count, 2);
+        double visit_length_10s_30s_ratio = NumberUtils.formatDouble(
+                (double) visit_length_10s_30s / (double) session_count, 2);
+        double visit_length_30s_60s_ratio = NumberUtils.formatDouble(
+                (double) visit_length_30s_60s / (double) session_count, 2);
+        double visit_length_1m_3m_ratio = NumberUtils.formatDouble(
+                (double) visit_length_1m_3m / (double) session_count, 2);
+        double visit_length_3m_10m_ratio = NumberUtils.formatDouble(
+                (double) visit_length_3m_10m / (double) session_count, 2);
+        double visit_length_10m_30m_ratio = NumberUtils.formatDouble(
+                (double) visit_length_10m_30m / (double) session_count, 2);
+        double visit_length_30m_ratio = NumberUtils.formatDouble(
+                (double) visit_length_30m / (double) session_count, 2);
+
+        double step_length_1_3_ratio = NumberUtils.formatDouble(
+                (double) step_length_1_3 / (double) session_count, 2);
+        double step_length_4_6_ratio = NumberUtils.formatDouble(
+                (double) step_length_4_6 / (double) session_count, 2);
+        double step_length_7_9_ratio = NumberUtils.formatDouble(
+                (double) step_length_7_9 / (double) session_count, 2);
+        double step_length_10_30_ratio = NumberUtils.formatDouble(
+                (double) step_length_10_30 / (double) session_count, 2);
+        double step_length_30_60_ratio = NumberUtils.formatDouble(
+                (double) step_length_30_60 / (double) session_count, 2);
+        double step_length_60_ratio = NumberUtils.formatDouble(
+                (double) step_length_60 / (double) session_count, 2);
+
+        // 将统计结果封装为Domain对象
+        SessionAggrStat sessionAggrStat = new SessionAggrStat();
+        sessionAggrStat.setTaskid(taskId);
+        sessionAggrStat.setSession_count(session_count);
+        sessionAggrStat.setVisit_length_1s_3s_ratio(visit_length_1s_3s_ratio);
+        sessionAggrStat.setVisit_length_4s_6s_ratio(visit_length_4s_6s_ratio);
+        sessionAggrStat.setVisit_length_7s_9s_ratio(visit_length_7s_9s_ratio);
+        sessionAggrStat.setVisit_length_10s_30s_ratio(visit_length_10s_30s_ratio);
+        sessionAggrStat.setVisit_length_30s_60s_ratio(visit_length_30s_60s_ratio);
+        sessionAggrStat.setVisit_length_1m_3m_ratio(visit_length_1m_3m_ratio);
+        sessionAggrStat.setVisit_length_3m_10m_ratio(visit_length_3m_10m_ratio);
+        sessionAggrStat.setVisit_length_10m_30m_ratio(visit_length_10m_30m_ratio);
+        sessionAggrStat.setVisit_length_30m_ratio(visit_length_30m_ratio);
+        sessionAggrStat.setStep_length_1_3_ratio(step_length_1_3_ratio);
+        sessionAggrStat.setStep_length_4_6_ratio(step_length_4_6_ratio);
+        sessionAggrStat.setStep_length_7_9_ratio(step_length_7_9_ratio);
+        sessionAggrStat.setStep_length_10_30_ratio(step_length_10_30_ratio);
+        sessionAggrStat.setStep_length_30_60_ratio(step_length_30_60_ratio);
+        sessionAggrStat.setStep_length_60_ratio(step_length_60_ratio);
+
+        ISessionAggrStatService iSessionAggrStatService = (ISessionAggrStatService) context.getBean("iSessionAggrStatService");
+        iSessionAggrStatService.insert(sessionAggrStat);
+
     }
 
     /**
@@ -172,7 +432,8 @@ public class UserVisitSessionAnalyzerSpark {
                         + Constants.FIELD_SEARCH_KEYWORDS + "=" + searchKeywords + "|"
                         + Constants.FIELD_CATEGORY_IDS + "=" + clickCategoryIDs + "|"
                         + Constants.FIELD_VISIT_LENGTH + "=" + visitLength + "|"
-                        + Constants.FIELD_STEP_LENGTH + "=" + stepLength;
+                        + Constants.FIELD_STEP_LENGTH + "=" + stepLength + "|"
+                        + Constants.FIELD_STARTTIME + "=" + DateUtils.formatDate(starTime);
                 return new Tuple2<Long, String>(userid, partAggrInfo);
             }
         });
