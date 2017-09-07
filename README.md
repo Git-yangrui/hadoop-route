@@ -13,9 +13,9 @@ This project can give you haoop study route
     
     have some sacala knowleage and you can study from demo
     
-3. moudule zookeeper 
+3. moudule zookeeper(Hbase api)
     
-    provide zookeeper api operation
+    provide zookeeper api operation and hbase api operation
     
 4. module  sparkporject
 
