@@ -21,16 +21,18 @@ public interface Constants {
     String SPARKSTREMINGAPPLICATION = "SparkStremingApplication";
     String FIELD_SESSIONID = "sessionid";
     String FIELD_STARTTIME="startTime";
+    String FIELD_PAY_COUNT="payCount";
+    String FIELD_CLICK_COUNT="clickCount";
     String FIELD_VISIT_LENGTH="visitLength";
     String FIELD_STEP_LENGTH="stepLength";
-
+    String FIELD_CATEGORY_ID="categoryid";
     String FIELD_SEARCH_KEYWORDS = "searchkeywords";
     String FIELD_CATEGORY_IDS = "clickcategoryids";
     String FIELD_AGE = "age";
     String FIELD_PROFESSINAL = "professional";
     String FIELD_CITY = "city";
     String FIELD_SEX = "sex";
-
+    String FIELD_ORDER_COUNT="orderCount";
     String SPARK_LOCAL = "spark.local";
 
 
