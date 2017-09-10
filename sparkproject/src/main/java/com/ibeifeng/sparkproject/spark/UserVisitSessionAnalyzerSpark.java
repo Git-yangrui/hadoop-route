@@ -37,6 +37,7 @@ public class UserVisitSessionAnalyzerSpark {
     public static void main(String[] args) {
         //改变集合类 为fastUtil类
         //广播大变量  sc.broadcast()
+        //jvm 
 
         String[] s = new String[]{"1"};
         SparkConf conf = new SparkConf().setAppName(Constants.USERVISI_TSESSIONANALYZER_SPARK)
