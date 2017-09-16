@@ -27,6 +27,18 @@ import scala.Tuple2;
 
 import java.util.*;
 
+/**
+ *                   **********  数   据   倾   斜  **********
+ *
+ *  方案1  聚合源数据,尽量避免shuffle操作，这样肯定不会导致数据倾斜
+ *  方案2  过滤导致数据倾斜的key
+ *  方案3  提高reduce端的并行度 可以在shuffle的算子操作的时候加上分区操作
+ *  方案4  双重聚合操作 先分在聚合 在反转回来  随机数先将数据打散  进行聚合 聚合之后在反转回来
+ *  方案5  reduce join 转换map  Join  可以用广播变量广播一张数据小的表（源数据）
+ *  方案6  sample 采样 过滤 导致倾斜的key
+ *  方案7  随机数 扩容表  （迫不得已采用这种操作）
+ *
+ */
 
 public class UserVisitSessionAnalyzerSpark {
 
@@ -35,9 +47,60 @@ public class UserVisitSessionAnalyzerSpark {
     private static ApplicationContext context = new ClassPathXmlApplicationContext("classpath:application-core.xml");
 
     public static void main(String[] args) {
-        //改变集合类 为fastUtil类
-        //广播大变量  sc.broadcast()
-        //jvm 
+
+
+        //*******************spark的一些 调优*****************************
+        /**
+         * spark-submit   \
+         * --class  ...................
+         * -- num-executors 80 \
+         * --driver-memory  6g \
+         * --executor-memory 6g  \
+         * -executor-cores 3 \
+         * --master yarn-cluster   \
+         * --queue root.default  \
+         * --conf  ............
+         *
+         *   ...............jar
+         */
+
+
+        // 1.改变task的数量 一般情况设置为executor 的数量 * 每个executor de cpu数量的三倍
+
+        // 2.RDD的持久化  持久化有分为几种  全内存  全内存+磁盘 全磁盘  全内存+其他的序列化 。。。。。
+
+        // 3.改变集合类 为fastUtil类
+
+        // 4.广播大变量  sc.broadcast()
+
+        // 5.jvm 调优 @1   @2
+        /** @1
+         * Executor 堆外内存调优  executor 下会有很多task 并行进行  并且配了一个 blockmanager 管理缓存的数据
+         *     task
+         *      shuffle file can't find
+         *
+         *调优  脚本中 spark-submit   --conf spark.yarn.executor.memoryOverhead=2048m
+         *
+         * 默认情况下 堆外内存上限大概是300M
+         *
+         *
+         * 调节这个参数 可以减少OOM 的发生
+         *
+         */
+
+
+        /*** @2
+         *
+         * executor 会有限从自己本地关联的block manager中获取相应的数据  如果本地的bM没有的话那么会通过transferService 去远程其他的
+         *   节点拉去相应的数据  其他的BM 上，但是这时候 其他的BM 正好在GC 那么就会卡住，spark的默认时长是60s，几次超时就会报错，几次拉去失败
+         *   可能导致spark作业的失败，，DAGSchduler 也会反复重新提交 相关联的stage 及先对应tasks  反复的提交 大大延迟作业时间
+         *
+         * 这个时候可以设置 一个参数
+         *     spark-submit   设置  --conf  spark.core,connection.ack.wait.timeout=300
+         *     可以避免部分情况 及拉去文件失败  shuffle mapout file can't find  及正在gc的情况 避免掉 但是不会完全避免掉
+         *
+         * 链接等待时长
+         */
 
         String[] s = new String[]{"1"};
         SparkConf conf = new SparkConf().setAppName(Constants.USERVISI_TSESSIONANALYZER_SPARK)
@@ -299,6 +362,47 @@ public class UserVisitSessionAnalyzerSpark {
                 return new Tuple2<Long, Row>(row.getLong(0), row);
             }
         });
+
+        /**
+         *  数据倾斜值  sample操作
+         *  
+         */
+//        JavaPairRDD<Long, String> sampleUSerAggrInfoRdd = userAggrInfoRDD.sample(false, 0.1, 9);
+//        JavaPairRDD<Long, String> samplUserAggrInfoReduceRdd = sampleUSerAggrInfoRdd.reduceByKey((v1, v2) -> {
+//            return v1 + v2;
+//        });
+//        final Long sortkeyNeedFilter = samplUserAggrInfoReduceRdd.sortByKey(false).take(1).get(0)._1;
+//        JavaPairRDD<Long, String> afterFilterRDDByAneedFilterkey = userAggrInfoRDD.filter(v1 -> {
+//            return !v1._1.equals(sortkeyNeedFilter);
+//
+//        });
+//        JavaPairRDD<Long, String> afterFilterRDDByNotneedFilterkey = userAggrInfoRDD.filter(v1 -> {
+//            return v1._1.equals(sortkeyNeedFilter);
+//
+//        });
+//        JavaPairRDD<Long, Tuple2<String, Row>> joinResult1 =
+//                afterFilterRDDByAneedFilterkey.join(userid2InfoRDD);
+//        JavaPairRDD<Long, Tuple2<String, Row>> joinResult2 = afterFilterRDDByNotneedFilterkey.join(userid2InfoRDD);
+//        JavaPairRDD<Long, Tuple2<String, Row>> union = joinResult1.union(joinResult2);
+
+
+        /**
+         * 数据倾斜之扩容处理 扩容十倍
+         */
+
+//        JavaPairRDD<String, Row> appendRDD = userid2InfoRDD.flatMapToPair(longRowTuple2 -> {
+//            Long key = longRowTuple2._1;
+//            Row row = longRowTuple2._2;
+//            List<Tuple2<String, Row>> appendList = new ArrayList<>();
+//            for (int i = 0; i < 10; i++) {
+//                appendList.add(new Tuple2<String, Row>(i + "_" + key, row));
+//
+//            }
+//
+//            return appendList.iterator();
+//
+//        });
+
 
         //join 操作
         JavaPairRDD<Long, Tuple2<String, Row>> joinResult = userAggrInfoRDD.join(userid2InfoRDD);
