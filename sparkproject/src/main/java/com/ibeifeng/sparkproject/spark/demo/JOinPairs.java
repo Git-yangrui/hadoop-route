@@ -1,4 +1,4 @@
-package com.ibeifeng.sparkproject.spark;
+package com.ibeifeng.sparkproject.spark.demo;
 
 import com.ibeifeng.sparkproject.util.Constants;
 import com.ibeifeng.sparkproject.util.SparkModelConstants;

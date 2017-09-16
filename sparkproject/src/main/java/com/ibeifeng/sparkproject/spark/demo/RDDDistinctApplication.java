@@ -1,4 +1,4 @@
-package com.ibeifeng.sparkproject.spark;
+package com.ibeifeng.sparkproject.spark.demo;
 
 import com.ibeifeng.sparkproject.util.Constants;
 import com.ibeifeng.sparkproject.util.SparkModelConstants;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class RDDDjoinApplication {
+public class RDDDistinctApplication {
 
     public static void main(String[] args) {
         SparkConf conf = new SparkConf().setAppName(Constants.USERVISI_TSESSIONANALYZER_SPARK)

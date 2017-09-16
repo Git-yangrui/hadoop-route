@@ -1,8 +1,7 @@
-package com.ibeifeng.sparkproject.spark;
+package com.ibeifeng.sparkproject.spark.demo;
 
 import com.ibeifeng.sparkproject.util.Constants;
 import com.ibeifeng.sparkproject.util.SparkModelConstants;
-import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -13,8 +12,9 @@ import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class RDDApplication1 {
+public class RDDApplication {
 
     public static void main(String[] args) {
         SparkConf conf = new SparkConf().setAppName(Constants.USERVISI_TSESSIONANALYZER_SPARK)
@@ -37,14 +37,14 @@ public class RDDApplication1 {
 
         JavaRDD<String> parallelize = ssc.parallelize(ss);
 
-       final Accumulator<Integer> accumulator = ssc.accumulator(1);
+        parallelize.filter(v1 -> {
+            return  true;
+        });
 
         JavaRDD<String> filterRDD = parallelize.filter(new Function<String, Boolean>() {
-
             private int i=0;
             @Override
             public Boolean call(String v1) throws Exception {
-                accumulator.add(1);
                  i++;
                 System.out.println(i);
 
@@ -55,6 +55,7 @@ public class RDDApplication1 {
                 return false;
             }
         });
+        long count = filterRDD.count();
 
 
         JavaPairRDD<Long, Long> longLongJavaPairRDD = filterRDD.mapToPair(new PairFunction<String, Long, Long>() {
@@ -64,10 +65,9 @@ public class RDDApplication1 {
                 return new Tuple2<Long, Long>(Long.valueOf(s), 1l);
             }
         });
+        long count1 = longLongJavaPairRDD.count();
 
-        JavaPairRDD<Long, Iterable<Long>> longIterableJavaPairRDD = longLongJavaPairRDD.groupByKey();
-        longIterableJavaPairRDD.count();
-        System.out.println(accumulator.value());
+        longLongJavaPairRDD.countByKey();
         ssc.close();
     }
 }
