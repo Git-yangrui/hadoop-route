@@ -27,6 +27,8 @@ public class HBaseOperation {
             System.out.println(new String(CellUtil.cloneFamily(cell)));
         }
 
+//        hBaseTable.ba
+
 
     }
 

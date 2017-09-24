@@ -18,6 +18,14 @@ public interface Constants {
 
     //作业
     String USERVISI_TSESSIONANALYZER_SPARK = "UserVisitSessionAnalyzerSpark";
+    String SPARK_PAGE_APP="PageOneStepConverRateSpark";
+    String ARETOP3PRODUCTSPARK="AreTop3ProductSpark";
+
+    String SPARK_LOCAL_TASKID_SESSION="spark.local.taskid.session";
+    String SPARK_LOCAL_TASKID_PAGE="spark.local.taskid.page";
+    String PARAM_TRAGE_PAGE_FLOW="targe_page_flow";
+    String SPARK_LOCAL_TASKID_PRODUCT="spark.local.taskid.product";
+
     String SPARKSTREMINGAPPLICATION = "SparkStremingApplication";
     String FIELD_SESSIONID = "sessionid";
     String FIELD_STARTTIME="startTime";

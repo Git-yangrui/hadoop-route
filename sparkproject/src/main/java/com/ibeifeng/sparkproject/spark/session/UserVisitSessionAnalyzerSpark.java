@@ -18,6 +18,7 @@ import org.apache.spark.api.java.function.*;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.hive.HiveContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class UserVisitSessionAnalyzerSpark {
          * --executor-memory 6g  \
          * -executor-cores 3 \
          * --master yarn-cluster   \
+         * --file  hive-site 文件
          * --queue root.default  \
          * --conf  ............
          *
@@ -104,7 +106,10 @@ public class UserVisitSessionAnalyzerSpark {
 
         String[] s = new String[]{"1"};
         SparkConf conf = new SparkConf().setAppName(Constants.USERVISI_TSESSIONANALYZER_SPARK)
-                .setMaster(SparkModelConstants.LOCAL).set("spark.storage.memoryFraction","0.5");//设置cache和对内存
+                .setMaster(SparkModelConstants.LOCAL).set("spark.storage.memoryFraction","0.5");//设置cache和堆内存
+
+
+        //window 下的设置 否则会报错
         conf.set("spark.testing.memory", "471859200");
         conf.set("spark.serializer","org.apache.spark.serilizer.KryoSerializer");//序列化机制
         conf.registerKryoClasses(new Class[]{});//需要序列化的类
@@ -114,7 +119,7 @@ public class UserVisitSessionAnalyzerSpark {
 
         SQLContext sqlContext = getSqlContext(sc.sc());
         mockData(sc, sqlContext);
-        Long taskId = ParamUtils.getTaskIdFromArgs(s);
+        Long taskId = ParamUtils.getTaskIdFromArgs(Constants.SPARK_LOCAL_TASKID_SESSION,s);
         Task task = service.findById(taskId);
         JSONObject taskParam = JSONObject.parseObject(task.getTaskParam());
 
@@ -851,8 +856,14 @@ public class UserVisitSessionAnalyzerSpark {
         if (local) {
             return new SQLContext(sc);
         } else {
+            /*
+
+               脚本要将hive的配置文件放到脚本中
+             */
+            SparkSession sparksession = SparkSession.builder().enableHiveSupport().getOrCreate();
+            return  sparksession.sqlContext();
 //            SparkSession.Builder builder = SparkSession.builder().enableHiveSupport().sparkContext(sc);
-            return new HiveContext(sc);
+//            return new HiveContext(sc);
         }
     }
 

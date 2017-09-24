@@ -94,4 +94,15 @@ public class ConfigurationManager {
 		return false;
 	}
 
+    public static Long getLong(String key) {
+
+		String property = getProperty(key);
+
+		try {
+            return Long.valueOf(property);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		return 0l;
+    }
 }
