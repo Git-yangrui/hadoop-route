@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="hadoop1" />
+        <module name="hadoop2" />
+        <module name="hbase" />
+        <module name="spark-demo1" />
+        <module name="sparkdependecy" />
+        <module name="sparkproject" />
+        <module name="streaming" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="hadoop-route" target="1.8" />
+      <module name="hadoop1" target="1.8" />
+      <module name="hadoop2" target="1.8" />
+      <module name="hbase" target="1.8" />
+      <module name="spark-demo1" target="1.7" />
+      <module name="sparkdependecy" target="1.8" />
+      <module name="sparkproject" target="1.8" />
+      <module name="sparkstreaming" target="1.8" />
+      <module name="streaming" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

@@ -1,12 +1,12 @@
 package com.yangrui.spark;
 
-import com.sun.org.apache.xerces.internal.dom.PSVIAttrNSImpl;
 import com.yangrui.MySparkContext;
-import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.*;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.VoidFunction;
 import scala.Tuple2;
 
 import java.io.Serializable;

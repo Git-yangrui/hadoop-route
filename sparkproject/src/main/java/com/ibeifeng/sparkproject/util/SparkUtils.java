@@ -8,11 +8,11 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.hive.HiveContext;
 import scala.Tuple2;
 
 public class SparkUtils {
@@ -43,7 +43,6 @@ public class SparkUtils {
              */
             SparkSession sparksession = SparkSession.builder().config("","").sparkContext(sc)
                     .enableHiveSupport().getOrCreate();
-            sparksession.sparkContext()
 
 
             return  sparksession.sqlContext();
@@ -60,10 +59,14 @@ public class SparkUtils {
     }
 
     public static JavaPairRDD<String, Row> getSessionId2rowActionRDD(JavaRDD<Row> actionRDDByDateRange) {
-
-        return actionRDDByDateRange.mapToPair(row ->{
-                return new Tuple2<String, Row>(row.getString(2), row);
+        return actionRDDByDateRange.mapToPair(new PairFunction<Row, String, Row>() {
+            @Override
+            public Tuple2<String, Row> call(Row row) throws Exception {
+                return  new Tuple2<String, Row>(row.getString(2), row);
+            }
         });
+
+
     }
 
 

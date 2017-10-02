@@ -14,9 +14,16 @@
         <module>zookeeper</module>
         <module>scala-route</module>
         <module>sparkproject</module>
+        <module>streaming</module>
+        <module>sparkdependecy</module>
     </modules>
     <url>http://maven.apache.org</url>
-
+<!--<dependencies>-->
+    <!--<dependency>-->
+        <!--<groupId>org.apache.</groupId>-->
+        <!--<artifactId></artifactId>-->
+    <!--</dependency>-->
+<!--</dependencies>-->
     <build>
         <plugins>
             <plugin>

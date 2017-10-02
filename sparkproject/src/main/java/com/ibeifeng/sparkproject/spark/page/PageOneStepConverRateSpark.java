@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import scala.Int;
 import scala.Tuple2;
 
 import java.util.*;
@@ -38,7 +37,8 @@ public class PageOneStepConverRateSpark {
         SparkConf conf = new SparkConf().setAppName(Constants.SPARK_PAGE_APP);
         SparkUtils.setMaster(conf);
         JavaSparkContext jsc=new JavaSparkContext(conf);
-
+//        JavaRDD<String> ss = jsc.textFile("ss");
+//        ss.foreach(s -> );
 
         //细节见SparkUtils.getSqlContext
         SQLContext sqlContext=SparkUtils.getSqlContext(jsc.sc());

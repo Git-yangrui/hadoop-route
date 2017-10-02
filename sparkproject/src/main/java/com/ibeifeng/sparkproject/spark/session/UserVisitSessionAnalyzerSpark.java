@@ -19,7 +19,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.hive.HiveContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -29,6 +28,7 @@ import scala.Tuple2;
 import java.util.*;
 
 /**
+ * /**
  *                   **********  数   据   倾   斜  **********
  *
  *  方案1  聚合源数据,尽量避免shuffle操作，这样肯定不会导致数据倾斜
@@ -39,8 +39,39 @@ import java.util.*;
  *  方案6  sample 采样 过滤 导致倾斜的key
  *  方案7  随机数 扩容表  （迫不得已采用这种操作）
  *
- */
+ *
+ *
+ *
+ *   --conf spark.yarn.executor.memoryOverhead=2G 调节堆外内存
+ *
+ *    spark.core.connection,ack,wait,timeout   等待链接的超时时长
+ *
+ *    spark.default.parallelism  reduce的数量
+ *
+ *
+ *    consolidation 机制 控制map端输出文件 spark.shuffle.consolidateFiles  =true
+ *
+ *
+ *     map端的缓冲区默认只有32kb  有时候会有大量的数据输出 这时候会有大量的Io操作 spark.shuffle.file.buffer
+ *
+ *
+ *     reduce端也一样 拉去过来的数据很多的话 处理不过来  这时候就要溢写到磁盘中
+ *
+ *     reduce端聚合内存默认比是0.2  占executor的0.2   spark.shuffle.memoryFraction
+ *
+ *
+ *
+ *
+ *     **  现在shuffle manager 默认的是sortshufflemanager 一个task 默认输出一个文件
+ *
+ *
+ *
+ *    *
+ *
+ *    *
+ *   ** /
 
+ */
 public class UserVisitSessionAnalyzerSpark {
 
     private static Logger LOG = LoggerFactory.getLogger(UserVisitSessionAnalyzerSpark.class);
@@ -55,7 +86,7 @@ public class UserVisitSessionAnalyzerSpark {
          * spark-submit   \
          * --class  ...................
          * -- num-executors 80 \
-         * --driver-memory  6g \
+         * --driver-memory 2g \
          * --executor-memory 6g  \
          * -executor-cores 3 \
          * --master yarn-cluster   \

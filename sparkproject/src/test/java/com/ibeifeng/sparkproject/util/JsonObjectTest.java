@@ -12,5 +12,7 @@ public class JsonObjectTest {
         JSONObject jsonObject=JSONObject.parseObject(" {\"startAge\":[\"10\"],\"endAge\":[\"50\"]}");
         Object startAge = jsonObject.get("startAge");
         jsonObject.getJSONArray("startAge");
+
+//        Serializable
     }
 }

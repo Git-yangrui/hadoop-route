@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
-    <profile name="Maven 1" modules="spark-demo1,sparkproject" />
+    <profile name="Maven 1" modules="sparkproject,spark-demo1" />
+    <profile name="Maven 2" modules="sparkstreaming">
+      <option name="deprecationWarnings" value="true" />
+    </profile>
+    <profile name="Maven 3" modules="streaming">
+      <parameters>
+        <parameter value="-target:jvm-1.5" />
+      </parameters>
+    </profile>
   </component>
 </project>

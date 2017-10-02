@@ -76,7 +76,7 @@ public class MapReduceOnHbase extends Configured implements Tool {
         TableMapReduceUtil.initTableMapperJob("user",scan,ReadUserMapper.class,Text.class,Put.class,job);
         TableMapReduceUtil.initTableReducerJob("user",WriteUserReduce.class,job);
 
-        return 0;
+        return job.waitForCompletion(true)==true?0:1;
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,0 +1,151 @@
+=====================================================
+
+meta-region-server, backup-masters, table, draining, 
+region-in-transition, table-lock, running, master, 
+namespace, hbaseid, online-snapshot, replication, 
+splitWAL, recovering-regions, rs
+
+
+
+user-table
+	user
+	regions(startkey,endkey)
+user,region-01,regionserver-03
+
+meta table
+	
+
+HBase新版本中，有了类似于RDBMS中DataBase的概率
+命令空间
+	用户自定义的表，默认情况下命名空间
+		default
+	系统自带的元数据表的命名空间
+		hbase
+
+>>>>>>>>>
+user-table,
+	regions
+hbase:meta
+					 RegionServer    RegionServer
+client -> zookeepr -> hbase:meta -> user-table -> put/get/scan
+		get /hbase/meta-region-server
+
+
+=====================================================
+HBase Scan时
+	scan.setCacheBlocks(cacheBlocks);
+	scan.setCaching(caching);
+作业：
+	使用以及作用
+
+
+=====================================================
+
+/opt/modules/hbase-0.98.6-hadoop2/lib/hbase-common-0.98.6-hadoop2.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/protobuf-java-2.5.0.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/hbase-client-0.98.6-hadoop2.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/hbase-hadoop-compat-0.98.6-hadoop2.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/hbase-server-0.98.6-hadoop2.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/hbase-protocol-0.98.6-hadoop2.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/high-scale-lib-1.1.1.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/zookeeper-3.4.5.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/guava-12.0.1.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/htrace-core-2.04.jar:/opt/modules/hbase-0.98.6-hadoop2/lib/netty-3.6.6.Final.jar
+
+export HBASE_HOME=/opt/modules/hbase-0.98.6-hadoop2
+export HADOOP_HOME=/opt/modules/hadoop-2.5.0
+HADOOP_CLASSPATH=`${HBASE_HOME}/bin/hbase mapredcp` $HADOOP_HOME/bin/yarn jar $HBASE_HOME/lib/hbase-server-0.98.6-hadoop2.jar
+
+  CellCounter: Count cells in HBase table
+  completebulkload: Complete a bulk data load.
+  copytable: Export a table from local cluster to peer cluster
+  export: Write table data to HDFS.
+  import: Import data written by Export.
+  importtsv: Import data in TSV format.
+  rowcounter: Count rows in HBase table
+  verifyrep: Compare the data from tables in two different clusters. WARNING: It doesn't work for incrementColumnValues'd cells since the timestamp is changed after being appended to the log.
+
+TSV
+	tab
+	>> student.tsv
+	1001	zhangsan	26	shanghai
+CSV
+	逗号
+	>> student.csv
+	1001,zhangsan,26,shanghai
+
+completebulkload     ★ ★ ★ ★ ★ ★
+	file  csv
+	  |
+	hfile
+	  |
+	load
+
+=============================================
+MapRedcue
+	* input
+		table
+
+	* output
+		table
+[yangrui@yangziyu01 app]$ export HBASE_HOME=^C
+[yangrui@yangziyu01 app]$ export HBASE_HOME=/home/yangrui/app/hbase-0.98.6-hadoop2/
+[yangrui@yangziyu01 app]$ export HADOOP_HOME=/home/yangrui/app/hadoop-2.5.0/
+[yangrui@yangziyu01 app]$ HADOOP_CLASSPATH=`^C
+[yangrui@yangziyu01 app]$ export HADOOP_CLASSPATH=`${HBASE_HOME}/bin/hbase mapredcp`
+
+123	123	123	123	123	123	
+		
+export HBASE_HOME=/opt/modules/hbase-0.98.6-hadoop2
+export HADOOP_HOME=/opt/modules/hadoop-2.5.0
+HADOOP_CLASSPATH=`${HBASE_HOME}/bin/hbase mapredcp` $HADOOP_HOME/bin/yarn jar $HADOOP_HOME/jars/hbase-mr-user2basic.jar
+
+=============================================
+HBase
+	来源
+>> logs
+>> RDBMS
+
+
+
+
+student.tsv
+10001	zhangsan	35	male	beijing	0109876543
+10002	lisi	32	male	shanghia	0109876563
+10003	zhaoliu	35	female	hangzhou	01098346543
+10004	qianqi	35	male	shenzhen	01098732543
+
+
+export HBASE_HOME=/home/yangrui/app/hbase-0.98.6-hadoop2
+export HADOOP_HOME=/home/yangrui/app/hadoop-2.5.0
+HADOOP_CLASSPATH=`${HBASE_HOME}/bin/hbase mapredcp`:${HBASE_HOME}/conf \
+        ${HADOOP_HOME}/bin/yarn jar \
+${HBASE_HOME}/lib/hbase-server-0.98.6-hadoop2.jar importtsv \
+-Dimporttsv.columns=HBASE_ROW_KEY,\
+info:name,info:age,info:sex,info:address,info:phone \
+student \
+hdfs://yangziyu01:9000/user/yangrui/hbase/importts
+
+
+
+
+${HADOOP_HOME}/bin/yarn jar  \
+${HBASE_HOME}/lib/hbase-server-0.98.6-hadoop2.jar importtsv \
+-Dimporttsv.columns=HBASE_ROW_KEY,\
+info:name,info:age,info:sex,info:address,info:phone \
+-Dimporttsv.bulk.output=hdfs://yangziyu01:9000/user/yangrui/hbase/hfileoutput \
+student2 \
+hdfs://yangziyu01:9000/user/yangrui/hbase/importtsv
+
+
+export HBASE_HOME=/opt/modules/hbase-0.98.6-hadoop2
+export HADOOP_HOME=/opt/modules/hadoop-2.5.0
+HADOOP_CLASSPATH=`${HBASE_HOME}/bin/hbase mapredcp`:${HBASE_HOME}/conf \
+        ${HADOOP_HOME}/bin/yarn jar \
+${HBASE_HOME}/lib/hbase-server-0.98.6-hadoop2.jar \
+completebulkload \
+hdfs://yangziyu01:9000/user/yangrui/hbase/hfileoutput \
+student2
+
+作业：
+	csv格式文件
+student.cvs
+10001,zhangsan,35,male,beijing,0109876543
+10002,lisi,32,male,shanghia,0109876563
+
+	>> mapreduce 
+		*.cvs -> hfile
+	>> bulk load 
+		hfile -> table
+

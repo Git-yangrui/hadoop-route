@@ -24,6 +24,11 @@
      <!--<dependency>-->
          <!--<groupId>org.apache.hbase</groupId>-->
          <!--<artifactId>hbase-sever</artifactId>-->
+         <!--<version>1.2.6</version>-->
+     <!--</dependency>-->
+     <!--<dependency>-->
+         <!--<groupId>org.apache.hbase</groupId>-->
+         <!--<artifactId>hbase-common</artifactId>-->
          <!--<version>1.3.1</version>-->
      <!--</dependency>-->
  </dependencies>

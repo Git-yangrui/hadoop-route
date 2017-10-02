@@ -1,0 +1,172 @@
+
+
+
+新的需求（话单数据的查询）
+
+phone + time
+
+>>> 依据前面设计的表
+	使用filter
+		columnFilter
+
+==========================================================
+索引表/辅助表（主表） --   功能
+
+phone_time
+比如：
+	182600937645_2015100100000
+
+	182600937645_2015102400000
+列簇：info
+列：
+	rowkey  ->   
+
+Get最快的数据查询
+
+
+=========================================================
+主表和索引表的数据 如何同步呢？？？？？
+	>> 程序，事物
+	>> phoenix
+		>> JDBC方式，才能同步
+创建索引表	
+>> solr
+	lily
+	cloudera search
+
+
+
+ 'user', 
+{
+	NAME => 'info', 
+	DATA_BLOCK_ENCODING => 'NONE', 
+	BLOOM FILTER => 'ROW', 
+	REPLICATION_SCOPE => '0',
+	VERSIONS => '1', 
+	COMPRESSION => 'NONE', 
+	MIN_VERSIONS => '0', 
+	TTL => 'FOREVER',
+	KEEP_DELETED_CELLS => 'false', 
+	BLOCKSIZE => '65536', 
+	IN_MEMORY => 'false', 
+	BLOCKCACHE => 'true'
+}                                                            
+
+
+多版本
+	Cell
+
+
+HBase Sanppy
+1）配置Haodop压缩
+	[beifeng@hadoop-senior hadoop-2.5.0]$ bin/hadoop checknative
+2）配置HBase
+	>> hadoop-snappy jar  -> 放入到lib目录
+	>> 需要将本地库native  
+
+
+
+
+RegionServer   -  12G
+	
+	>> MemStore    40%
+		write
+	>> BlockCache  40%
+		read
+	>> other       20%
+引出一个问题：
+	当用户去读取数据
+		>> MemStore
+		>> BlockCache    ->  每个RegionServer只有一个BlockCache
+		>> hfile
+	>> meger
+		返回数据集
+
+
+DataBlock
+	k/v
+
+=================================================================
+
+
+bin/hbase hlog hdfs://hadoop-senior.ibeifeng.com:8020/hbase/WALs/hadoop-senior.ibeifeng.com,60020,1445114801201/hadoop-senior.ibeifeng.com,60020,1445114801201.1445122017198 -p -s
+
+
+=================================================================
+
+与Hive的集成
+>> 数据存储在HBase中
+>> hive 表的描述信息存储在hive中
+hive-table     hbase-table
+hive-column    hbase-rowkey,hbase-cf-column
+handler
+
+
+
+两种方式
+>> 管理表
+	创建hive表的时候，指定数据存储在hbase表中。
+CREATE TABLE hbase_table_1(key int, value string) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,cf1:val")
+TBLPROPERTIES ("hbase.table.name" = "xyz");
+
+
+
+>> 外部表
+	现在已经存在一个HBase表，需要对表中数据进行分析。
+CREATE EXTERNAL TABLE hbase_user(id int, name string,age int) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,info:name,info:age")
+TBLPROPERTIES ("hbase.table.name" = "user");
+
+本质：
+	Hive就是HBase客户端。
+	是不是需要一些配置，jar包
+
+
+export HBASE_HOME=/home/yangrui/app/hbase-0.98.6-hadoop2
+export HIVE_HOME=/home/yangrui/app/apache-hive-0.13.1-bin/
+ln -s $HBASE_HOME/lib/hbase-common-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-common-0.98.6-hadoop2.jar
+ln -s $HBASE_HOME/lib/hbase-server-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-server-0.98.6-hadoop2.jar
+ln -s $HBASE_HOME/lib/hbase-client-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-client-0.98.6-hadoop2.jar
+ln -s $HBASE_HOME/lib/hbase-protocol-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-protocol-0.98.6-hadoop2.jar
+ln -s $HBASE_HOME/lib/hbase-it-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-it-0.98.6-hadoop2.jar 
+ln -s $HBASE_HOME/lib/htrace-core-2.04.jar $HIVE_HOME/lib/htrace-core-2.04.jar
+
+
+ln -s $HBASE_HOME/lib/hbase-hadoop2-compat-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-hadoop2-compat-0.98.6-hadoop2.jar
+ln -s $HBASE_HOME/lib/hbase-hadoop-compat-0.98.6-hadoop2.jar $HIVE_HOME/lib/hbase-hadoop-compat-0.98.6-hadoop2.jar
+ln -s /home/yangrui/app/hbase-0.98.6-hadoop2/lib/high-scale-lib-1.1.1.jar /home/yangrui/app/hive-0.13.1/lib/high-scale-lib-1.1.1.jar
+
+>>> 应用场景
+日志文件
+	|    正则表达式
+  hive -> table
+	|
+ hive-hbase-table
+    |    insert ... select  ... 
+    load
+
+================================================
+
+作业：
+	使用CDH版本的HBase，搭建伪分布式环境（Zookeeper也要是CDH版本）
+	
+	使用CDH版本进行如何操作
+		使用SQOOP将MYSQL中某张表数据导入到HBase表中。
+
+================================================
+京东
+	>> userid + ordertime   (ordertime : default)
+
+	>> orderid
+		子订单
+
+类型：
+未完成订单
+	RDBMS
+完成订单
+	HBase
+
+

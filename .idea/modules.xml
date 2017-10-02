@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/hadoop-route.iml" filepath="$PROJECT_DIR$/hadoop-route.iml" />
+      <module fileurl="file://$PROJECT_DIR$/hadoop1/hadoop1.iml" filepath="$PROJECT_DIR$/hadoop1/hadoop1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/hadoop2/hadoop2.iml" filepath="$PROJECT_DIR$/hadoop2/hadoop2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zookeeper/hbase.iml" filepath="$PROJECT_DIR$/zookeeper/hbase.iml" />
+      <module fileurl="file://$PROJECT_DIR$/scala-route/spark-demo1.iml" filepath="$PROJECT_DIR$/scala-route/spark-demo1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sparkdependecy/sparkdependecy.iml" filepath="$PROJECT_DIR$/sparkdependecy/sparkdependecy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sparkproject/sparkproject.iml" filepath="$PROJECT_DIR$/sparkproject/sparkproject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/streaming/streaming.iml" filepath="$PROJECT_DIR$/streaming/streaming.iml" />
+    </modules>
+  </component>
+</project>

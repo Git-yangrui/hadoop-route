@@ -1,0 +1,177 @@
+
+hbase(main):002:0> help "create"
+Creates a table. Pass a table name, and a set of column family
+specifications (at least one), and, optionally, table configuration.
+Column specification can be a simple string (name), or a dictionary
+(dictionaries are described below in main help output), necessarily 
+including NAME attribute. 
+Examples:
+
+Create a table with namespace=ns1 and table qualifier=t1
+  hbase> create 'ns1:t1', {NAME => 'f1', VERSIONS => 5}
+
+Create a table with namespace=default and table qualifier=t1
+  hbase> create 't1', {NAME => 'f1'}, {NAME => 'f2'}, {NAME => 'f3'}
+  hbase> # The above in shorthand would be the following:
+  hbase> create 't1', 'f1', 'f2', 'f3'
+  hbase> create 't1', {NAME => 'f1', VERSIONS => 1, TTL => 2592000, BLOCKCACHE => true}
+  hbase> create 't1', {NAME => 'f1', CONFIGURATION => {'hbase.hstore.blockingStoreFiles' => '10'}}
+  
+Table configuration options can be put at the end.
+Examples:
+
+  hbase> create 'ns1:t1', 'f1', SPLITS => ['10', '20', '30', '40']
+  hbase> create 't1', 'f1', SPLITS => ['10', '20', '30', '40']
+  hbase> create 't1', 'f1', SPLITS_FILE => 'splits.txt', OWNER => 'johndoe'
+  hbase> create 't1', {NAME => 'f1', VERSIONS => 5}, METADATA => { 'mykey' => 'myvalue' }
+  hbase> # Optionally pre-split the table into NUMREGIONS, using
+  hbase> # SPLITALGO ("HexStringSplit", "UniformSplit" or classname)
+  hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit'}
+  hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit', CONFIGURATION => {'hbase.hregion.scan.loadColumnFamiliesOnDemand' => 'true'}}
+
+You can also keep around a reference to the created table:
+
+  hbase> t1 = create 't1', 'f1'
+
+Which gives you a reference to the table named 't1', on which you can then
+call methods.
+
+
+
+
+HBase中
+	namespace
+		tables
+默认情况下：
+>> default
+	默认情况创建的表，都在此命名空间下
+>> hbase
+	系统的命名空间
+	meta
+	namespace
+
+
+  Group name: namespace
+  Commands: alter_namespace, create_namespace, describe_namespace, drop_namespace, list_namespace, list_namespace_tables
+
+
+
+create 'ns1:t1', {NAME => 'f1', VERSIONS => 5}
+
+
+create 'ns1:t1', 'cf'
+=
+create 'ns1:t1', {NAME => 'f1'}
+
+
+create 'ns1:t2', {NAME => 'f1'}, {NAME => 'f2'}, {NAME => 'f3'}
+=
+create 'ns1:t3', 'f1', 'f2', 'f3'
+
+
+===================================================================
+table
+	Region
+		[startkey,endkey)
+默认情况的情况下，创建一个HBase表，自动为表分配一个Region。
+
+问题？？？？？
+	结合实际使用来看，无论是在测试环境还生产环境，我们创建好HBase一张表以后，
+我需要往表中导入大量的数据。
+	file/datas -> hfile  -> bulk load into hbase table
+
+Region -> managed  RegionServer
+	|
+	split -> two  Region
+	|
+	RegionServer出问题？？？？
+
+解决方案：
+	创建表时，多创建一些Region（依据表的数据rowkey进行设计，结合业务）
+五个Region
+	被多个RegionServer进行管理
+	要点：
+		在插入数据时，会向五个Region中分别插入对应的数据，均衡了
+
+引出问题？？？？
+	如何在创建表的时候，预先创建一些Region呢？？？？？
+HBase 表的预分区
+	
+Region划分，依赖于rowkey，预先预估一些rowkey
+
+
+hbase> create 'ns1:t1', 'f1', SPLITS => ['10', '20', '30', '40']
+hbase> create 't1', 'f1', SPLITS => ['10', '20', '30', '40']
+hbase> create 't1', 'f1', SPLITS_FILE => 'splits.txt', OWNER => 'johndoe'
+hbase> create 't1', {NAME => 'f1', VERSIONS => 5}, METADATA => { 'mykey' => 'myvalue' }
+hbase> # Optionally pre-split the table into NUMREGIONS, using
+hbase> # SPLITALGO ("HexStringSplit", "UniformSplit" or classname)
+hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit'}
+hbase> create 't1', 'f1', {NUMREGIONS => 15, SPLITALGO => 'HexStringSplit', CONFIGURATION => {'hbase.hregion.scan.loadColumnFamiliesOnDemand' => 'true'}}
+
+案例：
+create 'bflogs', 'info', SPLITS => ['20151001000000000', '20151011000000000', '20151021000000000']
+指定预估rowkey
+年月日时分秒毫秒
+'20151001000000000' 
+'20151011000000000'
+'20151021000000000'
+
+create 'bflogs2', 'info', SPLITS_FILE => '/opt/datas/bflogs-split.txt'
+
+第三方式
+create 't11', 'f11', {NUMREGIONS => 2, SPLITALGO => 'HexStringSplit'}
+create 't12', 'f12', {NUMREGIONS => 4, SPLITALGO => 'UniformSplit'}
+
+==================================================
+依据查询条件：
+	telphone  +  （starttime - endtime）
+
+time	area	active	phone	talktime	mode	price
+
+思考：
+	如何设计表
+	核心：
+		rowkey查询快
+
+rowkey:
+	telphone + time
+
+	18660086204_20151001092345	
+info:	
+	area	active	phone	talktime	mode	price
+
+scan
+startrow
+	18660086204_20150401000000
+stoprow
+	18660086204_20150413000000
+
+实时性
+
+
+如何在海量数据中，获取我所需要的数据（查询的数据）。
+
+表的rowkey设计中：
+	核心思想：
+		依据rowkey查询最快
+		对rowkey进行范围查询range
+		前缀匹配
+		
+18660086201_
+	|
+18660086205_
+		|
+		|		并不是等价的
+		|
+18660086201_20150401000000  -   18660086201_20150412000000
+18660086201_20150402000000  -   18660086202_20150412000000
+18660086201_20150403000000  -   18660086203_20150412000000
+18660086201_20150404000000  -   18660086204_20150412000000
+18660086201_20150405000000  -   18660086205_20150412000000
+
+
+
+
+
+

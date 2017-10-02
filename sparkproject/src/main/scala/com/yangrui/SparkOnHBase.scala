@@ -1,5 +1,7 @@
 package com.yangrui
 
+import org.apache.spark.SparkConf
+
 object SparkOnHBase {
 
 //  def convertScanToString(scan: Scan) = {
@@ -75,6 +77,11 @@ object SparkOnHBase {
 //    }
 //    // =================================
 //  }
-//}
+//}Y
+
+  def main(args: Array[String]): Unit = {
+
+    val conf=new SparkConf()
+  }
 
 }
