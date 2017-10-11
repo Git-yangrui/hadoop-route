@@ -14,7 +14,6 @@ import com.ibeifeng.sparkproject.util.Constants;
 import com.ibeifeng.sparkproject.util.ParamUtils;
 import com.ibeifeng.sparkproject.util.SparkUtils;
 import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -181,8 +180,8 @@ public class AreTop3ProductSpark {
                 " click_product_id is not null and click_product_id !='NULL' and click_product_id !='null '" +
                 " and action_time >='" + startDateparam + "'" +
                 "and action_time <= '" + endDateparam + "'";
-
         Dataset<Row> dateset = sqlContext.sql(sql);
+        dateset.groupBy("11");
         return dateset.javaRDD().mapToPair(row -> {
             return new Tuple2<Long,Row>(Long.valueOf(row.getString(0)),row);
         });

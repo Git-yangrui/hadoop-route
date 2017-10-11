@@ -86,7 +86,7 @@ public class UserVisitSessionAnalyzerSpark {
          * spark-submit   \
          * --class  ...................
          * -- num-executors 80 \
-         * --driver-memory 2g \
+         * --driver-memory 2g \------ ``
          * --executor-memory 6g  \
          * -executor-cores 3 \
          * --master yarn-cluster   \
