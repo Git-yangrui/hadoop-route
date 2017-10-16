@@ -276,7 +276,7 @@ public class MapreduceJoin extends Configured implements Tool {
         Configuration conf = getConf();
 
         Job job= Job.getInstance(conf,MapreduceJoin.class.getSimpleName());
-
+//        bloomf
         job.setJarByClass(MapreduceJoin.class);
 
 //        job.setJar();

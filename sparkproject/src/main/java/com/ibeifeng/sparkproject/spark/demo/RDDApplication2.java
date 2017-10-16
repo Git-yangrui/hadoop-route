@@ -37,8 +37,11 @@ public class RDDApplication2 {
         ss.add("999");
         ss.add("10000");
 
-        JavaRDD<String> parallelize = ssc.parallelize(ss);
+        JavaRDD<String> parallelize = ssc.parallelize(ss).repartition(3);
+
+
         JavaPairRDD<String, Integer> stringIntegerJavaPairRDD = parallelize.mapToPair(value -> new Tuple2<String, Integer>(value, 1));
+
 
         JavaPairRDD<String, Iterable<Integer>> stringIterableJavaPairRDD = stringIntegerJavaPairRDD.groupByKey();
         JavaPairRDD<String, Integer> stringIntegerJavaPairRDD1 = stringIterableJavaPairRDD.flatMapToPair(new PairFlatMapFunction<Tuple2<String, Iterable<Integer>>, String, Integer>() {
